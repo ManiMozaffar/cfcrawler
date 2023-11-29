@@ -6,49 +6,58 @@
 [![Commit activity](https://img.shields.io/github/commit-activity/m/ManiMozaffar/cfcrawler)](https://img.shields.io/github/commit-activity/m/ManiMozaffar/cfcrawler)
 [![License](https://img.shields.io/github/license/ManiMozaffar/cfcrawler)](https://img.shields.io/github/license/ManiMozaffar/cfcrawler)
 
-Cloudflare scraper and cralwer written in Async
+Cloudflare scraper and cralwer written in Async, In-place library for HTTPX.
+Crawl website that has cloudflare enabled, easier than ever!
 
 - **Github repository**: <https://github.com/ManiMozaffar/cfcrawler/>
-- **Documentation** <https://ManiMozaffar.github.io/cfcrawler/>
 
-## Getting started with your project
+## Getting started
 
-First, create a repository on GitHub with the same name as this project, and then run the following commands:
+To use library, simply replace your aiohttp client with ours!
 
-``` bash
-git init -b main
-git add .
-git commit -m "init commit"
-git remote add origin git@github.com:ManiMozaffar/cfcrawler.git
-git push -u origin main
+```python
+from cfcrawler import AsyncClient
+
+async def get(url):
+    client = AsyncClient()
+    await client.get(url)
+
 ```
 
-Finally, install the environment and the pre-commit hooks with
+You can also rotate user agents
 
-```bash
-make install
+```python
+from cfcrawler import AsyncClient
+
+client = AsyncClient()
+client.rotate_useragent()
 ```
 
-You are now ready to start development on your project! The CI/CD
-pipeline will be triggered when you open a pull request, merge to main,
-or when you create a new release.
+You can also specify which browser you want to use
+```python
+from cfcrawler.types import Browser
+from cfcrawler import AsyncClient
 
-To finalize the set-up for publishing to PyPi or Artifactory, see
-[here](https://fpgmaas.github.io/cookiecutter-poetry/features/publishing/#set-up-for-pypi).
-For activating the automatic documentation with MkDocs, see
-[here](https://fpgmaas.github.io/cookiecutter-poetry/features/mkdocs/#enabling-the-documentation-on-github).
-To enable the code coverage reports, see [here](https://fpgmaas.github.io/cookiecutter-poetry/features/codecov/).
+AsyncClient(browser=Browser.CHROME)
+```
 
-## Releasing a new version
+You can also use asyncer to syncify the implementation
+```python
+from cfcrawler import AsyncClient
+from asyncer import syncify
 
-- Create an API Token on [Pypi](https://pypi.org/).
-- Add the API Token to your projects secrets with the name `PYPI_TOKEN` by visiting
-[this page](https://github.com/ManiMozaffar/cfcrawler/settings/secrets/actions/new).
-- Create a [new release](https://github.com/ManiMozaffar/cfcrawler/releases/new) on Github.
-Create a new tag in the form ``*.*.*``.
+def get(url):
+    client = AsyncClient()
+    syncify(client.get)(url)
+```
 
-For more details, see [here](https://fpgmaas.github.io/cookiecutter-poetry/features/cicd/#how-to-trigger-a-release).
+## Coming Next
 
----
+1. CF JS Challenge solver
+2. Captcha solver integration (2Captcha and etc)
 
-Repository initiated with [fpgmaas/cookiecutter-poetry](https://github.com/fpgmaas/cookiecutter-poetry).
+
+## Contribution
+
+I'll work on this library in few months, I don't have free time right now, but feel free to contribute.
+I'll check and test the PRs myself!
