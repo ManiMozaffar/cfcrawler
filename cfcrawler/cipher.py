@@ -1,6 +1,8 @@
+from typing import Dict, List
+
 from cfcrawler.types import Browser
 
-MAP_BROWSER_TO_CIPHER: dict[Browser, list[str]] = {
+MAP_BROWSER_TO_CIPHER: Dict[Browser, List[str]] = {
     Browser.CHROME: [
         "TLS_AES_128_GCM_SHA256",
         "TLS_CHACHA20_POLY1305_SHA256",

@@ -1,4 +1,5 @@
 import ssl
+import typing
 
 from httpx import AsyncHTTPTransport
 
@@ -10,8 +11,8 @@ class CfScrapeTransport(AsyncHTTPTransport):
     def __init__(
         self,
         browser: Browser,
-        ecdh_curve: str | None = None,
-        cipher_suite: str | None = None,
+        ecdh_curve: typing.Optional[str] = None,
+        cipher_suite: typing.Optional[str] = None,
         *args,
         **kwargs,
     ) -> None:
