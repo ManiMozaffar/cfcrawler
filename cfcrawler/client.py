@@ -22,8 +22,8 @@ class AsyncClient(_AsyncClient):
     def __init__(
         self,
         *,
-        browser: Browser | None = None,
-        default_user_agent: str | None = None,
+        browser: typing.Optional[Browser] = None,
+        default_user_agent: typing.Optional[str] = None,
         auth: typing.Optional[_types.AuthTypes] = None,
         cipher_suite: typing.Optional[str] = None,
         ecdh_curve: typing.Optional[str] = None,
@@ -52,7 +52,7 @@ class AsyncClient(_AsyncClient):
         self.browser: Browser = browser or random.choice(
             [Browser.CHROME, Browser.FIREFOX]
         )
-        self.ua = FakeUserAgent(self.browser.value.lower())
+        self.ua = FakeUserAgent(self.browser.value)
         transport = CfScrapeTransport(
             browser=self.browser, cipher_suite=cipher_suite, ecdh_curve=ecdh_curve
         )
