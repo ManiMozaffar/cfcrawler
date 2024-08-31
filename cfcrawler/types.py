@@ -18,8 +18,8 @@ class StrEnum(str, Enum):
                 raise TypeError("%r is not a string" % (values[0],))
         if len(values) >= 2:
             # check that encoding argument is a string
-            if not isinstance(values[1], str):
-                raise TypeError("encoding must be a string, not %r" % (values[1],))
+            if not isinstance(values[1], str):  # type: ignore
+                raise TypeError("encoding must be a string, not %r" % (values[1],))  # type: ignore
         if len(values) == 3:
             # check that errors argument is a string
             if not isinstance(values[2], str):
@@ -29,7 +29,7 @@ class StrEnum(str, Enum):
         member._value_ = value
         return member
 
-    def _generate_next_value_(name, start, count, last_values):
+    def _generate_next_value_(name, start, count, last_values):  # type: ignore
         """
         Return the lower-cased version of the member name.
         """

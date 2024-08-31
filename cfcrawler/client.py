@@ -1,9 +1,8 @@
 import random
 import typing
+from functools import lru_cache
 
-from fake_useragent import FakeUserAgent
-from httpx import _types
-from httpx._client import USE_CLIENT_DEFAULT, UseClientDefault
+from httpx import AsyncHTTPTransport, _types
 from httpx._client import AsyncClient as _AsyncClient
 from httpx._config import (
     DEFAULT_LIMITS,
@@ -11,11 +10,29 @@ from httpx._config import (
     DEFAULT_TIMEOUT_CONFIG,
     Limits,
 )
-from httpx._models import Response
 from httpx._transports.base import AsyncBaseTransport
+from typing_extensions import assert_never
 
-from cfcrawler.transport import CfScrapeTransport
+from cfcrawler.tls import modify_tls_fingerprint
 from cfcrawler.types import Browser
+from cfcrawler.user_agent import get_all_ua_for_specific_browser
+
+
+@lru_cache
+def get_fake_ua_factory(browser: Browser):
+    from fake_useragent import UserAgent
+
+    match browser:
+        case Browser.CHROME:
+            browsers = ["chrome"]
+        case Browser.FIREFOX:
+            browsers = ["firefox"]
+
+        case _:
+            assert_never(browser)
+
+    ua = UserAgent(browsers=browsers)
+    return ua
 
 
 class AsyncClient(_AsyncClient):
@@ -24,9 +41,12 @@ class AsyncClient(_AsyncClient):
         *,
         browser: typing.Optional[Browser] = None,
         default_user_agent: typing.Optional[str] = None,
-        auth: typing.Optional[_types.AuthTypes] = None,
         cipher_suite: typing.Optional[str] = None,
         ecdh_curve: typing.Optional[str] = None,
+        user_agent_factory: typing.Optional[typing.Callable[[], str]] = None,
+        use_fake_useragent_library: bool = False,
+        transport: typing.Optional[AsyncHTTPTransport] | None = None,
+        auth: typing.Optional[_types.AuthTypes] = None,
         params: typing.Optional[_types.QueryParamTypes] = None,
         headers: typing.Optional[_types.HeaderTypes] = None,
         cookies: typing.Optional[_types.CookieTypes] = None,
@@ -44,7 +64,6 @@ class AsyncClient(_AsyncClient):
             typing.Mapping[str, typing.List[typing.Callable[..., typing.Any]]]
         ] = None,
         base_url: _types.URLTypes = "",
-        transport: typing.Optional[AsyncBaseTransport] = None,
         app: typing.Optional[typing.Callable[..., typing.Any]] = None,
         trust_env: bool = True,
         default_encoding: typing.Union[str, typing.Callable[[bytes], str]] = "utf-8",
@@ -52,16 +71,17 @@ class AsyncClient(_AsyncClient):
         self.browser: Browser = browser or random.choice(
             [Browser.CHROME, Browser.FIREFOX]
         )
-        self.ua = FakeUserAgent(self.browser.value)
-        transport = CfScrapeTransport(
-            browser=self.browser, cipher_suite=cipher_suite, ecdh_curve=ecdh_curve
-        )
+        self.user_agent_factory = user_agent_factory
+        self.use_fake_useragent_library = use_fake_useragent_library
         self.default_user_agent = default_user_agent
+        self._custom_transport = transport or AsyncHTTPTransport()
+        self.ecdh_curve = ecdh_curve
+        self.cipher_suite = cipher_suite
 
         super().__init__(
             auth=auth,
             params=params,
-            headers=headers,
+            headers=headers or {},
             cookies=cookies,
             timeout=timeout,
             follow_redirects=follow_redirects,
@@ -71,7 +91,7 @@ class AsyncClient(_AsyncClient):
             verify=verify,
             cert=cert,
             http2=http2,
-            transport=transport,
+            transport=self._custom_transport,
             app=app,
             http1=http1,
             proxies=proxies,
@@ -80,72 +100,24 @@ class AsyncClient(_AsyncClient):
             default_encoding=default_encoding,
             mounts=mounts,
         )
-        self.rotate_useragent()
+        self.shuffle_user_agent(self.get_random_user_agent())
 
-    async def request(
-        self,
-        method: str,
-        url: _types.URLTypes,
-        *,
-        content: typing.Optional[_types.RequestContent] = None,
-        data: typing.Optional[_types.RequestData] = None,
-        files: typing.Optional[_types.RequestFiles] = None,
-        json: typing.Optional[typing.Any] = None,
-        params: typing.Optional[_types.QueryParamTypes] = None,
-        headers: typing.Optional[_types.HeaderTypes] = None,
-        cookies: typing.Optional[_types.CookieTypes] = None,
-        auth: typing.Union[
-            _types.AuthTypes, UseClientDefault, None
-        ] = USE_CLIENT_DEFAULT,
-        follow_redirects: typing.Union[bool, UseClientDefault] = USE_CLIENT_DEFAULT,
-        timeout: typing.Union[
-            _types.TimeoutTypes, UseClientDefault
-        ] = USE_CLIENT_DEFAULT,
-        extensions: typing.Optional[_types.RequestExtensions] = None,
-    ) -> Response:
-        """
-        Build and send a request.
-
-        Equivalent to:
-
-        ```python
-        request = client.build_request(...)
-        response = await client.send(request, ...)
-        ```
-
-        See `AsyncClient.build_request()`, `AsyncClient.send()`
-        and [Merging of configuration][0] for how the various parameters
-        are merged with client-level configuration.
-
-        [0]: /advanced/#merging-of-configuration
-        """
-        request = self.build_request(
-            method=method,
-            url=url,
-            content=content,
-            data=data,
-            files=files,
-            json=json,
-            params=params,
-            headers=headers,
-            cookies=cookies,
-            timeout=timeout,
-            extensions=extensions,
+    def shuffle_user_agent(self, user_agent: str):
+        self.headers.update({"User-Agent": user_agent})
+        modify_tls_fingerprint(
+            pool=self._custom_transport._pool,
+            browser=self.browser,
+            ecdh_curve=self.ecdh_curve,
+            cipher_suite=self.cipher_suite,
         )
-        follow_redirects = True
-        response = await self.send(
-            request, auth=auth, follow_redirects=follow_redirects
-        )
-        return response
 
-    def inject_useragent(self, user_agent: str):
-        self.user_agent = user_agent
+    def get_random_user_agent(self) -> str:
         if self.default_user_agent:
-            self.user_agent = self.default_user_agent
+            return self.default_user_agent
+        elif self.user_agent_factory:
+            return self.user_agent_factory()
+        elif self.use_fake_useragent_library:
+            ua = get_fake_ua_factory(self.browser)
+            return typing.cast(str, ua.random)
         else:
-            self.user_agent = user_agent
-
-        self.headers.update({"User-Agent": self.user_agent})
-
-    def rotate_useragent(self):
-        self.inject_useragent(self.ua.random)
+            return random.choice(get_all_ua_for_specific_browser(self.browser))
