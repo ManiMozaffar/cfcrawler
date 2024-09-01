@@ -28,3 +28,6 @@ typeCheckingMode = "standard"
 
 [tool.pytest.ini_options]
 addopts = "--tb=short --show-capture stdout"
+
+[tool.setuptools.package-data]
+"aioclock" = ["py.typed"]
