@@ -2,12 +2,13 @@ import ssl
 
 import pytest
 
-from cfcrawler.cipher import MAP_BROWSER_TO_CIPHER
+from cfcrawler.tls import get_cipher_suite
+from cfcrawler.types import Browser
 
 
 def test_valid_ciphers():
-    for browser, ciphers in MAP_BROWSER_TO_CIPHER.items():
-        cipher_suite = ":".join(ciphers)
+    for browser in Browser:
+        cipher_suite = get_cipher_suite(browser)
         try:
             context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
             context.set_ciphers(cipher_suite)
