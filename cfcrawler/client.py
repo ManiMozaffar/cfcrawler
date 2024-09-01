@@ -13,21 +13,26 @@ from httpx._config import (
 from httpx._transports.base import AsyncBaseTransport
 from typing_extensions import assert_never
 
-from cfcrawler.tls import modify_tls_fingerprint
+from cfcrawler.tls import mimic_tls_fingerprint_from_browser
 from cfcrawler.types import Browser
 from cfcrawler.user_agent import get_all_ua_for_specific_browser
 
 
 @lru_cache
 def get_fake_ua_factory(browser: Browser):
-    from fake_useragent import UserAgent
+    try:
+        from fake_useragent import UserAgent
+    except ImportError:
+        raise ImportError(
+            "You need to install fake-useragent library to use this feature."
+            "Please run `pip install cfcrawler[ua]`"
+        )
 
     match browser:
         case Browser.CHROME:
             browsers = ["chrome"]
         case Browser.FIREFOX:
             browsers = ["firefox"]
-
         case _:
             assert_never(browser)
 
@@ -100,11 +105,11 @@ class AsyncClient(_AsyncClient):
             default_encoding=default_encoding,
             mounts=mounts,
         )
-        self.shuffle_user_agent(self.get_random_user_agent())
+        self.rotate_useragent()
 
-    def shuffle_user_agent(self, user_agent: str):
-        self.headers.update({"User-Agent": user_agent})
-        modify_tls_fingerprint(
+    def rotate_useragent(self):
+        self.headers.update({"User-Agent": self.get_random_user_agent()})
+        mimic_tls_fingerprint_from_browser(
             pool=self._custom_transport._pool,
             browser=self.browser,
             ecdh_curve=self.ecdh_curve,
