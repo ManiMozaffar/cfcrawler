@@ -18,7 +18,10 @@ dev-dependencies = [
 
 
 [project.optional-dependencies]
-useragent = ["fake-useragent>=1.5.1"]
+ua = ["fake-useragent>=1.5.1"]
 
 [tool.pyright]
 typeCheckingMode = "standard"
+
+[tool.pytest.ini_options]
+addopts = "--tb=short --show-capture stdout"

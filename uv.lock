@@ -35,7 +35,7 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
-useragent = [
+ua = [
     { name = "fake-useragent" },
 ]
 
@@ -50,7 +50,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "fake-useragent", marker = "extra == 'useragent'", specifier = ">=1.5.1" },
+    { name = "fake-useragent", marker = "extra == 'ua'", specifier = ">=1.5.1" },
     { name = "httpx", specifier = ">=0.20" },
     { name = "typing-extensions", specifier = ">=4.12.2" },
 ]
