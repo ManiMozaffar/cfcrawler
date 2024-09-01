@@ -8,7 +8,7 @@ on:
     types: [opened, synchronize, reopened, ready_for_review]
 
 jobs:
-  tox:
+  run-quality-assurance:
     runs-on: ubuntu-latest
     strategy:
       matrix:
