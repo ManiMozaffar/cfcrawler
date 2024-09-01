@@ -23,7 +23,7 @@ pip install cfcrawler
 To install `fake-useragent` backend support to rotate user agents, you can do:
 
 ```bash
-pip install cfcrawler[ua]
+pip install "cfcrawler[ua]"
 ```
 
 ## Getting started
