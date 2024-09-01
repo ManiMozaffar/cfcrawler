@@ -46,10 +46,9 @@ def get_all_fireox_ua() -> list[str]:
 
 
 def get_all_ua_for_specific_browser(browser: Browser) -> list[str]:
-    match browser:
-        case Browser.CHROME:
-            return get_all_chrome_ua()
-        case Browser.FIREFOX:
-            return get_all_fireox_ua()
-        case _:
-            assert_never(browser)
+    if browser == Browser.CHROME:
+        return get_all_chrome_ua()
+    elif browser == Browser.FIREFOX:
+        return get_all_fireox_ua()
+    else:
+        assert_never(browser)

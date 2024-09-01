@@ -28,13 +28,12 @@ def get_fake_ua_factory(browser: Browser):
             "Please run `pip install cfcrawler[ua]`"
         )
 
-    match browser:
-        case Browser.CHROME:
-            browsers = ["chrome"]
-        case Browser.FIREFOX:
-            browsers = ["firefox"]
-        case _:
-            assert_never(browser)
+    if browser == Browser.CHROME:
+        browsers = ["chrome"]
+    elif browser == Browser.FIREFOX:
+        browsers = ["firefox"]
+    else:
+        assert_never(browser)
 
     ua = UserAgent(browsers=browsers)
     return ua
@@ -50,7 +49,7 @@ class AsyncClient(_AsyncClient):
         ecdh_curve: typing.Optional[str] = None,
         user_agent_factory: typing.Optional[typing.Callable[[], str]] = None,
         use_fake_useragent_library: bool = False,
-        transport: typing.Optional[AsyncHTTPTransport] | None = None,
+        transport: typing.Optional[AsyncHTTPTransport] = None,
         auth: typing.Optional[_types.AuthTypes] = None,
         params: typing.Optional[_types.QueryParamTypes] = None,
         headers: typing.Optional[_types.HeaderTypes] = None,
